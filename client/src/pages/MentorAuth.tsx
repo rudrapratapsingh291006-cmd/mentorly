@@ -15,10 +15,10 @@ export default function MentorAuth() {
   const [role, setRole] = useState("");
   const [affiliation, setAffiliation] = useState("");
   const [location, setLocationField] = useState("San Francisco · Remote");
-  const [domain, setDomain] = useState<Mentor["domain"]>("AI & SaaS");
-  const [stageHelp, setStageHelp] = useState("Career Guidance & Technical Roadmaps");
-  const [focus, setFocus] = useState("Practical problem solving & real-world scaling");
-  const [expertise, setExpertise] = useState("Tech Stack, Career Growth, System Design");
+  const [domain, setDomain] = useState<Mentor["domain"]>("Healthcare & Wellness");
+  const [stageHelp, setStageHelp] = useState("Preventive health, nutrition planning & wellness");
+  const [focus, setFocus] = useState("Practical problem solving & real-world guidance");
+  const [expertise, setExpertise] = useState("Healthcare, Sports Fitness, Career Transition");
   const [imageUrl, setImageUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
 
   const handleRegisterMentor = (e: React.FormEvent) => {
@@ -220,11 +220,11 @@ export default function MentorAuth() {
                     onChange={(e) => setDomain(e.target.value as Mentor["domain"])}
                     className="mt-1 h-10 w-full rounded-xl border border-[#303333] bg-[#151717] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
                   >
-                    <option value="AI & SaaS">AI & SaaS</option>
-                    <option value="FinTech">FinTech & Finance</option>
-                    <option value="HealthTech">HealthTech & Wellness</option>
-                    <option value="ClimateTech">ClimateTech & Sustainability</option>
-                    <option value="General">Career, Life & General Strategy</option>
+                    <option value="Healthcare & Wellness">Healthcare & Wellness</option>
+                    <option value="Sports & Fitness">Sports & Fitness</option>
+                    <option value="Career & Tech">Career & Tech</option>
+                    <option value="Finance & Legal">Finance & Legal</option>
+                    <option value="Life & Mindset">Life & Mindset</option>
                   </select>
                 </div>
                 <div>

@@ -34,7 +34,7 @@ export default function Admin() {
   const [newMentorName, setNewMentorName] = useState("");
   const [newMentorRole, setNewMentorRole] = useState("");
   const [newMentorAffiliation, setNewMentorAffiliation] = useState("");
-  const [newMentorDomain, setNewMentorDomain] = useState<Mentor["domain"]>("AI & SaaS");
+  const [newMentorDomain, setNewMentorDomain] = useState<Mentor["domain"]>("Healthcare & Wellness");
   const [newMentorStage, setNewMentorStage] = useState("");
   const [newMentorFocus, setNewMentorFocus] = useState("");
   const [newMentorLocation, setNewMentorLocation] = useState("San Francisco · PST");
@@ -754,11 +754,11 @@ export default function Admin() {
                     onChange={(e) => setNewMentorDomain(e.target.value as any)}
                     className="mt-1 h-10 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
                   >
-                    <option value="AI & SaaS">AI & SaaS</option>
-                    <option value="FinTech">FinTech</option>
-                    <option value="HealthTech">HealthTech</option>
-                    <option value="ClimateTech">ClimateTech</option>
-                    <option value="General">General</option>
+                    <option value="Healthcare & Wellness">Healthcare & Wellness</option>
+                    <option value="Sports & Fitness">Sports & Fitness</option>
+                    <option value="Career & Tech">Career & Tech</option>
+                    <option value="Finance & Legal">Finance & Legal</option>
+                    <option value="Life & Mindset">Life & Mindset</option>
                   </select>
                 </div>
                 <div>

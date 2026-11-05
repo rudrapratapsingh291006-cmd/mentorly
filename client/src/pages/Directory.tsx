@@ -53,7 +53,14 @@ export default function Directory() {
     toast.success(`Session with ${bookingMentor.name} via ${bookingMode === "video" ? "Video Call" : "Live Chat"} booked successfully!`);
   };
 
-  const domains = ["All Domains", "AI & SaaS", "FinTech", "HealthTech", "ClimateTech", "General"];
+  const domains = [
+    "All Domains",
+    "Healthcare & Wellness",
+    "Sports & Fitness",
+    "Career & Tech",
+    "Finance & Legal",
+    "Life & Mindset",
+  ];
 
   const filtered = useMemo(() => {
     return mentorList.filter((m) => {
@@ -113,15 +120,15 @@ export default function Directory() {
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Home
               </Link>
               <p className="font-mono text-xs uppercase tracking-[.2em] text-[#ef765e]">
-                Venture Mentorship Directory
+                Expert Consultancy & Mentorship Directory
               </p>
               <h1 className="mt-3 font-display text-4xl sm:text-6xl leading-[.95] tracking-[-.06em]">
-                Meet founders who have<br />
-                <span className="text-[#ef765e]">built what you want to build.</span>
+                Consultants and specialists for<br />
+                <span className="text-[#ef765e]">real-world everyday challenges.</span>
               </h1>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-[#a6aba6]">
-              1-on-1 office hours with alumni startup founders, early-stage investors, and technical architects ready to review your college venture.
+              Book 1-on-1 private video calls or text chats with certified experts in healthcare, sports training, fitness, tech, career transitions, and finance.
             </p>
           </div>
 
@@ -395,29 +402,30 @@ export default function Directory() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#a6aba6]">Primary Discussion Topic</label>
+                    <label className="block text-xs font-semibold text-[#a6aba6]">Primary Consultation Topic</label>
                     <select
                       value={bookingTopic}
                       onChange={(e) => setBookingTopic(e.target.value)}
                       className="mt-1.5 h-11 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
                     >
-                      <option value="Pitch Deck & Business Model Review">Pitch Deck & Business Model Review</option>
-                      <option value="Term Sheet & Valuation Advice">Term Sheet & Valuation Advice</option>
-                      <option value="Technical Architecture & Tech Stack">Technical Architecture & Tech Stack</option>
-                      <option value="Customer Discovery & First 100 Users">Customer Discovery & First 100 Users</option>
-                      <option value="Grant & Seed Funding Prep">Grant & Seed Funding Prep</option>
+                      <option value="Health, Nutrition & Wellness Guidance">Health, Nutrition & Wellness Guidance</option>
+                      <option value="Sports Training, Biomechanics & Fitness Regimen">Sports Training, Biomechanics & Fitness Regimen</option>
+                      <option value="Career Transition, Resume & Job Strategy">Career Transition, Resume & Job Strategy</option>
+                      <option value="Tech Architecture, Coding & System Review">Tech Architecture, Coding & System Review</option>
+                      <option value="Financial Planning, Tax & Personal Budgeting">Financial Planning, Tax & Personal Budgeting</option>
+                      <option value="Mindset, Burnout Prevention & Productivity">Mindset, Burnout Prevention & Productivity</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-[#a6aba6]">
-                      What is your venture name and key question?
+                      What specific problem or question are you facing?
                     </label>
                     <textarea
                       rows={3}
                       value={bookingNotes}
                       onChange={(e) => setBookingNotes(e.target.value)}
-                      placeholder="e.g. 'We are building DormPay. We have 45 pilot users and need advice on how to structure our seed grant application.'"
+                      placeholder="e.g. 'I am training for a half-marathon and need help with knee strain recovery', or 'Looking to transition from sales into software engineering.'"
                       className="mt-1.5 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] p-3 text-sm text-white placeholder:text-[#6a726d] outline-none focus:border-[#ef765e]"
                     />
                   </div>

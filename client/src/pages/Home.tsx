@@ -81,16 +81,16 @@ export default function Home() {
           <div className="grid items-center gap-16 pb-20 pt-16 lg:grid-cols-[1.05fr_.95fr] lg:pb-28 lg:pt-20">
             <div className="rise max-w-2xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[.16em] text-[#cbd5c7]">
-                <Sparkles className="h-3.5 w-3.5 text-[#ef765e]" /> Real Mentors for Real Life & Career Challenges
+                <Sparkles className="h-3.5 w-3.5 text-[#ef765e]" /> Online Consultancy Across Healthcare, Fitness, Tech & Beyond
               </div>
               
               <h1 className="font-display text-[clamp(3.2rem,6.2vw,5.8rem)] leading-[.95] tracking-[-.06em] text-[#f9f6ef]">
-                Everyday people solving<br />
-                <span className="text-[#ef765e]">real-world problems.</span>
+                Consultancy for everyday<br />
+                <span className="text-[#ef765e]">people & real life.</span>
               </h1>
               
               <p className="mt-8 max-w-lg text-lg leading-8 text-[#c5cec3]">
-                CrestConnect is the mentorship startup bridging everyday individuals, aspiring creators, and learners with battle-tested mentors across tech, business, finance, career transitions, and life goals.
+                CrestConnect is the direct 1-on-1 consultancy platform connecting everyday individuals with verified specialists in healthcare, sports conditioning, personal fitness, career growth, financial strategy, and life goals.
               </p>
               
               <div className="mt-10 flex flex-wrap gap-3">
@@ -98,19 +98,19 @@ export default function Home() {
                   href="/mentors"
                   className="rounded-full bg-[#ef765e] px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-1 hover:bg-[#e9654c] shadow-[0_10px_25px_rgba(239,118,94,.3)]"
                 >
-                  Find Your Mentor <ArrowUpRight className="ml-1 inline h-4 w-4" />
+                  Explore Consultants <ArrowUpRight className="ml-1 inline h-4 w-4" />
                 </Link>
                 <Link
                   href="/messages"
                   className="rounded-full border border-[#ef765e]/40 bg-[#ef765e]/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#ef765e]/20"
                 >
-                  <Users className="mr-2 inline h-4 w-4 text-[#ef765e]" /> Chat With Mentors
+                  <Users className="mr-2 inline h-4 w-4 text-[#ef765e]" /> Live Chat Consultation
                 </Link>
                 <Link
                   href="/call/room-eir-office-hours"
                   className="rounded-full border border-white/20 px-6 py-3.5 text-sm font-bold transition hover:bg-white/10"
                 >
-                  <Video className="mr-2 inline h-4 w-4 text-[#74aa77]" /> Try Video Call Room
+                  <Video className="mr-2 inline h-4 w-4 text-[#74aa77]" /> Video Consultation Room
                 </Link>
               </div>
 
@@ -123,7 +123,7 @@ export default function Home() {
                   <img src={portraits.marcus} className="h-9 w-9 rounded-full border-2 border-[#151717] object-cover" />
                 </div>
                 <span>
-                  <b className="text-white">120+ Verified Mentors</b> guiding <b className="text-[#ef765e]">3,500+ individuals</b>
+                  <b className="text-white">120+ Specialists</b> guiding <b className="text-[#ef765e]">3,500+ clients & seekers</b>
                 </span>
               </div>
             </div>
@@ -207,39 +207,39 @@ export default function Home() {
       {/* Everyday Problem Domains */}
       <section id="categories" className="container mx-auto max-w-7xl px-6 py-20 border-b border-[#262a28]">
         <div className="text-center max-w-2xl mx-auto">
-          <p className="font-mono text-xs uppercase tracking-[.2em] text-[#ef765e]">Get Help In Your Field</p>
+          <p className="font-mono text-xs uppercase tracking-[.2em] text-[#ef765e]">Explore Consultancy Services</p>
           <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold text-white">
-            Mentorship for real everyday challenges
+            Specialized consultation across vital life domains
           </h2>
           <p className="mt-3 text-sm text-[#a6aba6]">
-            Whether you are stuck in your career, starting a side venture, tackling code bugs, or mastering personal finance — our mentors guide you step by step.
+            Whether dealing with personal health concerns, training for peak athletic performance, leveling up your career, or untangling finances — book 1-on-1 private consultations.
           </p>
         </div>
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: "Career & Job Transitions",
-              desc: "Resume teardowns, interview prep, switching domains, and promotion navigation.",
-              icon: Briefcase,
+              title: "Healthcare & Wellness",
+              desc: "Preventive medicine, lifestyle disease guidance, bloodwork analysis, and diet consults.",
+              icon: Award,
+              color: "#74aa77",
+            },
+            {
+              title: "Sports & Fitness",
+              desc: "Athletic conditioning, hypertrophy routines, marathon prep, and injury rehabilitation.",
+              icon: Flame,
               color: "#ef765e",
             },
             {
-              title: "Tech, Coding & AI",
-              desc: "System design reviews, debugging blockers, learning roadmap, and project guidance.",
+              title: "Career & Technical Growth",
+              desc: "Resume reviews, software architecture, technical interview coaching, and domain transitions.",
               icon: Rocket,
               color: "#679bb8",
             },
             {
-              title: "Finance & Side Ventures",
-              desc: "Budgeting, early business models, freelance pricing, and monetization advice.",
-              icon: TrendingUp,
-              color: "#74aa77",
-            },
-            {
-              title: "Mindset & Life Strategy",
-              desc: "Goal setting, productivity systems, work-life balance, and overcoming burnout.",
-              icon: Award,
+              title: "Finance & Life Strategy",
+              desc: "Personal budgeting, tax strategy, freelance consulting, burnout recovery, and mindset.",
+              icon: Briefcase,
               color: "#eab308",
             },
           ].map((cat) => (
@@ -261,7 +261,7 @@ export default function Home() {
                 href="/mentors"
                 className="mt-4 inline-flex items-center text-xs font-semibold text-white/80 hover:text-[#ef765e]"
               >
-                Find mentors in this field →
+                Browse consultants in this field →
               </Link>
             </div>
           ))}
