@@ -22,6 +22,35 @@ export default function MentorAuth() {
   const [focus, setFocus] = useState("Practical problem solving & real-world guidance");
   const [expertise, setExpertise] = useState("Healthcare, Sports Fitness, Career Transition");
   const [imageUrl, setImageUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file (PNG, JPG, WEBP).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image file is too large. Please choose an image under 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(reader.result as string);
+      setIsUploading(false);
+      toast.success("Profile photo uploaded from this device!");
+    };
+    reader.onerror = () => {
+      setIsUploading(false);
+      toast.error("Failed to read image file.");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleRegisterMentor = (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,10 +317,39 @@ export default function MentorAuth() {
                 />
               </div>
 
+              {/* Upload photo from device */}
               <div>
-                <label className="block font-semibold text-[#a6aba6]">Profile Photo URL (optional)</label>
+                <label className="block font-semibold text-[#a6aba6] mb-1">
+                  Profile Photo (Upload from this device)
+                </label>
+                <div className="flex items-center gap-4 rounded-2xl border border-[#303333] bg-[#151717] p-3">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="h-14 w-14 rounded-full object-cover border-2 border-[#ef765e]"
+                  />
+                  <div className="flex-1 space-y-2">
+                    <label className="inline-flex items-center gap-2 rounded-xl bg-[#ef765e] px-4 py-2 text-xs font-bold text-white cursor-pointer hover:bg-[#e9654c] transition shadow-md">
+                      <Camera className="h-3.5 w-3.5" />
+                      {isUploading ? "Reading Image..." : "Choose Image from Device"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-[#8d9690]">
+                      Supports JPG, PNG, WEBP from your local gallery or folder.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#a6aba6]">Or paste Profile Photo Web URL</label>
                 <input
-                  value={imageUrl}
+                  value={imageUrl.startsWith("data:") ? "[Local Device Image Attached]" : imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://..."
                   className="mt-1 h-10 w-full rounded-xl border border-[#303333] bg-[#151717] px-3 text-sm text-white outline-none focus:border-[#ef765e]"

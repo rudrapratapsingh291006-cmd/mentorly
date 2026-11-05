@@ -486,10 +486,52 @@ export default function MentorDashboard() {
                     />
                   </div>
 
+                  {/* Device Photo Upload */}
                   <div>
-                    <label className="block font-semibold text-[#a6aba6]">Profile Photo URL</label>
+                    <label className="block font-semibold text-[#a6aba6] mb-1">
+                      Profile Photo (Upload from this device)
+                    </label>
+                    <div className="flex items-center gap-4 rounded-2xl border border-[#303333] bg-[#0b0c0c] p-3">
+                      <img
+                        src={editImage || mentor.image}
+                        alt="Preview"
+                        className="h-14 w-14 rounded-full object-cover border-2 border-[#ef765e]"
+                      />
+                      <div className="flex-1 space-y-2">
+                        <label className="inline-flex items-center gap-2 rounded-xl bg-[#ef765e] px-4 py-2 text-xs font-bold text-white cursor-pointer hover:bg-[#e9654c] transition shadow-md">
+                          <Camera className="h-3.5 w-3.5" />
+                          Choose New Photo from Device
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (!file.type.startsWith("image/")) {
+                                toast.error("Please choose an image file.");
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setEditImage(reader.result as string);
+                                toast.success("New photo loaded from this device! Click 'Save Profile Changes' below.");
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <p className="text-[11px] text-[#8d9690]">
+                          Upload any JPG, PNG, or WEBP saved on your phone or computer.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-[#a6aba6]">Or paste Photo Web URL</label>
                     <input
-                      value={editImage}
+                      value={editImage?.startsWith("data:") ? "[Local Device Image Attached]" : editImage}
                       onChange={(e) => setEditImage(e.target.value)}
                       className="mt-1 h-10 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
                     />
