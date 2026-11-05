@@ -58,6 +58,7 @@ export interface Booking {
   createdAt: string;
   status: "confirmed" | "completed" | "cancelled";
   meetingLink: string;
+  mode?: "video" | "chat";
 }
 
 export interface Startup {
@@ -399,11 +400,16 @@ export function addBooking(booking: Omit<Booking, "id" | "createdAt" | "meetingL
   const current = getStoredBookings();
   const id = `booking-${Date.now()}`;
   const roomCode = Math.random().toString(36).substring(2, 8);
+  const isChat = booking.mode === "chat";
+  const meetingLink = isChat
+    ? `/messages?topic=${encodeURIComponent(booking.topic)}`
+    : `/call/room-${roomCode}?topic=${encodeURIComponent(booking.topic)}`;
+
   const newBooking: Booking = {
     ...booking,
     id,
     createdAt: new Date().toISOString().split("T")[0],
-    meetingLink: `/call/room-${roomCode}?topic=${encodeURIComponent(booking.topic)}`,
+    meetingLink,
   };
   const updated = [newBooking, ...current];
   try {

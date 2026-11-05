@@ -16,7 +16,9 @@ export default function Directory() {
   const [bookingSlot, setBookingSlot] = useState(availableSlots[0] || "");
   const [bookingTopic, setBookingTopic] = useState("Pitch Deck & Business Model Review");
   const [bookingNotes, setBookingNotes] = useState("");
+  const [bookingMode, setBookingMode] = useState<"video" | "chat">("video");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookedMeetingLink, setBookedMeetingLink] = useState("");
 
   useEffect(() => {
     setMentorList(getStoredMentors().filter((m) => m.status !== "paused"));
@@ -35,18 +37,20 @@ export default function Directory() {
 
   const handleConfirmBooking = () => {
     if (!bookingMentor) return;
-    addBooking({
+    const booking = addBooking({
       mentorName: bookingMentor.name,
       mentorRole: bookingMentor.role,
       founderName: "Rohan Varma",
-      startupName: "DormPay",
+      startupName: "Personal Growth Project",
       slot: bookingSlot,
       topic: bookingTopic,
-      notes: bookingNotes || "Campus pitch review & office hours guidance",
+      notes: bookingNotes || "1-on-1 mentorship session",
       status: "confirmed",
+      mode: bookingMode,
     });
+    setBookedMeetingLink(booking.meetingLink);
     setBookingSuccess(true);
-    toast.success(`Office hours with ${bookingMentor.name} booked successfully!`);
+    toast.success(`Session with ${bookingMentor.name} via ${bookingMode === "video" ? "Video Call" : "Live Chat"} booked successfully!`);
   };
 
   const domains = ["All Domains", "AI & SaaS", "FinTech", "HealthTech", "ClimateTech", "General"];
@@ -77,23 +81,23 @@ export default function Directory() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/startups" className="hidden text-sm font-medium text-[#a6aba6] hover:text-white sm:block">
-              Campus Startups
+            <Link href="/messages" className="hidden text-sm font-medium text-[#a6aba6] hover:text-white sm:block">
+              Live Chat
             </Link>
             <Link href="/admin" className="hidden text-sm font-medium text-[#ef765e] hover:underline sm:block">
               Admin Portal
             </Link>
             <Link
-              href="/login/mentor"
-              className="hidden rounded-full px-4 py-2 text-sm font-semibold hover:bg-white/10 sm:block"
+              href="/mentor/join"
+              className="rounded-full border border-[#ef765e]/40 bg-[#ef765e]/10 px-4 py-2 text-xs font-bold text-white hover:bg-[#ef765e]/20"
             >
-              Become an Alumni Mentor
+              + Mentor Login / Register
             </Link>
             <Link
               href="/login/learner"
-              className="rounded-full bg-[#ef765e] px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#e9654c]"
+              className="rounded-full bg-[#ef765e] px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#e9654c]"
             >
-              Founder Sign In
+              Sign In
             </Link>
           </div>
         </header>
@@ -270,17 +274,29 @@ export default function Directory() {
                   Your 1-on-1 session with <b>{bookingMentor.name}</b> has been booked for <b>{bookingSlot}</b>.
                 </p>
                 <div className="mt-4 rounded-xl bg-[#0b0c0c] p-3 text-xs text-[#8d9690]">
-                  A calendar invite with the encrypted video room link has been added to your Founder Dashboard.
+                  Session format: <span className="font-bold text-white capitalize">{bookingMode === "video" ? "Live Video Call Room" : "Live Text Chat Thread"}</span>.
                 </div>
-                <div className="mt-6 flex justify-center gap-3">
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  {bookedMeetingLink && (
+                    <Link
+                      href={bookedMeetingLink}
+                      className="rounded-full bg-[#ef765e] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#e9654c] flex items-center gap-2"
+                    >
+                      {bookingMode === "video" ? <Video className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                      Launch Session Now
+                    </Link>
+                  )}
                   <Link
                     href="/dashboard/learner"
-                    className="rounded-full bg-[#ef765e] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#e9654c]"
+                    className="rounded-full border border-[#303333] px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/5"
                   >
-                    Go to Founder Dashboard
+                    View in Dashboard
                   </Link>
                   <button
-                    onClick={() => setBookingMentor(null)}
+                    onClick={() => {
+                      setBookingMentor(null);
+                      setBookingSuccess(false);
+                    }}
                     className="rounded-full border border-[#303333] px-5 py-2.5 text-sm text-[#a6aba6] hover:bg-white/5"
                   >
                     Close
@@ -332,6 +348,50 @@ export default function Directory() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Interaction Mode Selection: Video vs Live Chat */}
+                  <div>
+                    <label className="block text-xs font-semibold text-[#a6aba6] mb-1.5">
+                      Choose How to Interact *
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setBookingMode("video")}
+                        className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition ${
+                          bookingMode === "video"
+                            ? "border-[#ef765e] bg-[#ef765e]/15 text-white"
+                            : "border-[#303333] bg-[#0b0c0c] text-[#8d9690] hover:text-white"
+                        }`}
+                      >
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ef765e]/20 text-[#ef765e]">
+                          <Video className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-white">Live Video Call</p>
+                          <p className="text-[10px] text-[#8d9690]">Face-to-face with webcam</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBookingMode("chat")}
+                        className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition ${
+                          bookingMode === "chat"
+                            ? "border-[#ef765e] bg-[#ef765e]/15 text-white"
+                            : "border-[#303333] bg-[#0b0c0c] text-[#8d9690] hover:text-white"
+                        }`}
+                      >
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#679bb8]/20 text-[#679bb8]">
+                          <MessageSquare className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-white">Live Text Chat</p>
+                          <p className="text-[10px] text-[#8d9690]">Messaging & file sharing</p>
+                        </div>
+                      </button>
+                    </div>
                   </div>
 
                   <div>

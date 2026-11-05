@@ -46,10 +46,10 @@ function Nav() {
       </nav>
       <div className="flex items-center gap-2">
         <Link
-          href="/admin"
-          className="hidden rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-[#a6aba6] hover:text-white hover:border-white/40 lg:block"
+          href="/mentor/join"
+          className="rounded-full border border-[#ef765e]/40 bg-[#ef765e]/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#ef765e]/20"
         >
-          Admin
+          Mentor Login / Join
         </Link>
         <Link
           href="/login/learner"
