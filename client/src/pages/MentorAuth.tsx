@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Award, Briefcase, Camera, Check, Compass, Globe,
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Mentor, getStoredMentors, saveMentors, setLoggedInMentor } from "@/lib/appStore";
+import { saveCloudMentor } from "@/lib/cloudStore";
 import { toast } from "sonner";
 
 export default function MentorAuth() {
@@ -87,6 +88,9 @@ export default function MentorAuth() {
     const updated = [newMentor, ...currentMentors];
     saveMentors(updated);
     setLoggedInMentor(newMentor);
+
+    // Save to Firebase Cloud for instant cross-device appearance
+    saveCloudMentor(newMentor).catch((err) => console.warn(err));
 
     toast.success(`Welcome, ${name}! Your mentor account and public listing are active.`);
     setLocation("/mentor/dashboard");

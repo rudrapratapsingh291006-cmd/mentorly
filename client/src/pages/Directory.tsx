@@ -1,7 +1,8 @@
 import { ArrowLeft, ArrowUpRight, Calendar, Check, CheckCircle2, Clock, Filter, Heart, MessageSquare, Search, SlidersHorizontal, Sparkles, Star, Users, Video, X } from "lucide-react";
 import { Link } from "wouter";
 import { useEffect, useMemo, useState } from "react";
-import { Mentor, addBooking, generateUpcomingSlots, getSavedMentors, getStoredMentors, toggleSaveMentor } from "@/lib/appStore";
+import { Mentor, addBooking, generateUpcomingSlots, getSavedMentors, getStoredMentors, saveMentors, toggleSaveMentor } from "@/lib/appStore";
+import { fetchCloudMentors } from "@/lib/cloudStore";
 import { toast } from "sonner";
 
 export default function Directory() {
@@ -21,8 +22,23 @@ export default function Directory() {
   const [bookedMeetingLink, setBookedMeetingLink] = useState("");
 
   useEffect(() => {
-    setMentorList(getStoredMentors().filter((m) => m.status !== "paused"));
+    // 1. Load local cache immediately
+    const local = getStoredMentors().filter((m) => m.status !== "paused");
+    setMentorList(local);
     setSaved(getSavedMentors());
+
+    // 2. Fetch from Firebase Cloud if enabled (cross-device sync)
+    fetchCloudMentors().then((cloudList) => {
+      if (cloudList && cloudList.length > 0) {
+        // Merge cloud with existing
+        const map = new Map<string, Mentor>();
+        local.forEach((m) => map.set(m.id, m));
+        cloudList.forEach((m) => map.set(m.id, m));
+        const merged = Array.from(map.values()).filter((m) => m.status !== "paused");
+        setMentorList(merged);
+        saveMentors(merged);
+      }
+    });
   }, []);
 
   const handleToggleSave = (name: string) => {
