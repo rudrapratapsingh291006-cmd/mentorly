@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUpRight, Calendar, Check, CheckCircle2, Clock, Filter, Heart, MessageSquare, Search, SlidersHorizontal, Sparkles, Star, Users, Video, X } from "lucide-react";
 import { Link } from "wouter";
 import { useEffect, useMemo, useState } from "react";
-import { Mentor, addBooking, getSavedMentors, getStoredMentors, toggleSaveMentor } from "@/lib/appStore";
+import { Mentor, addBooking, generateUpcomingSlots, getSavedMentors, getStoredMentors, toggleSaveMentor } from "@/lib/appStore";
 import { toast } from "sonner";
 
 export default function Directory() {
@@ -10,7 +10,10 @@ export default function Directory() {
   const [activeDomain, setActiveDomain] = useState("All Domains");
   const [saved, setSaved] = useState<string[]>([]);
   const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
-  const [bookingSlot, setBookingSlot] = useState("Thursday, Sep 28 · 10:00 AM");
+  
+  // Real dynamic slots computed relative to today's date
+  const availableSlots = useMemo(() => generateUpcomingSlots(), []);
+  const [bookingSlot, setBookingSlot] = useState(availableSlots[0] || "");
   const [bookingTopic, setBookingTopic] = useState("Pitch Deck & Business Model Review");
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -311,16 +314,23 @@ export default function Directory() {
 
                 <div className="mt-5 space-y-4 text-sm">
                   <div>
-                    <label className="block text-xs font-semibold text-[#a6aba6]">Select Available Slot</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-semibold text-[#a6aba6]">Select Available Slot</label>
+                      <span className="text-[10px] font-mono text-[#74aa77] bg-[#74aa77]/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#74aa77] animate-pulse" />
+                        Live Available
+                      </span>
+                    </div>
                     <select
                       value={bookingSlot}
                       onChange={(e) => setBookingSlot(e.target.value)}
                       className="mt-1.5 h-11 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
                     >
-                      <option value="Thursday, Sep 28 · 10:00 AM">Thursday, Sep 28 · 10:00 AM (45 min)</option>
-                      <option value="Thursday, Sep 28 · 02:30 PM">Thursday, Sep 28 · 02:30 PM (45 min)</option>
-                      <option value="Friday, Sep 29 · 11:15 AM">Friday, Sep 29 · 11:15 AM (45 min)</option>
-                      <option value="Monday, Oct 02 · 04:00 PM">Monday, Oct 02 · 04:00 PM (45 min)</option>
+                      {availableSlots.map((s) => (
+                        <option key={s} value={s}>
+                          {s} (45 min)
+                        </option>
+                      ))}
                     </select>
                   </div>
 

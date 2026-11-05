@@ -1,4 +1,32 @@
-// Shared state storage using window localStorage for persistency across pages & tabs
+export function generateUpcomingSlots(baseDate = new Date()): string[] {
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const slots: string[] = [];
+  const times = ["10:00 AM", "02:30 PM", "04:00 PM", "11:15 AM", "05:30 PM"];
+
+  // Generate slots for upcoming 5 days (skipping weekends if desired or providing realistic availability)
+  let dayOffset = 1;
+  let timeIndex = 0;
+
+  while (slots.length < 5) {
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() + dayOffset);
+
+    // Prefer weekdays for office hours
+    if (d.getDay() !== 0 && d.getDay() !== 6) {
+      const dayName = days[d.getDay()];
+      const monthName = months[d.getMonth()];
+      const dateNum = String(d.getDate()).padStart(2, "0");
+      const timeStr = times[timeIndex % times.length];
+      slots.push(`${dayName}, ${monthName} ${dateNum} · ${timeStr}`);
+      timeIndex++;
+    }
+    dayOffset++;
+  }
+
+  return slots;
+}
 
 export interface Mentor {
   id: string;
@@ -257,34 +285,37 @@ const DEFAULT_STARTUPS: Startup[] = [
   },
 ];
 
-const DEFAULT_BOOKINGS: Booking[] = [
-  {
-    id: "booking-1",
-    mentorName: "Marcus Vance",
-    mentorRole: "Principal @ Horizon Ventures & Angel Syndicate",
-    founderName: "Rohan Varma",
-    startupName: "DormPay",
-    slot: "Thursday, Sep 28 · 10:00 AM",
-    topic: "Seed Cap Table Modeling & Venture Pitch Deck",
-    notes: "Review our 45 pilot campus merchant agreement and investor cap table split.",
-    createdAt: "2026-09-24",
-    status: "confirmed",
-    meetingLink: "/call/room-mv-office-hours?topic=Seed%20Cap%20Table%20Modeling%20%26%20Venture%20Pitch%20Deck",
-  },
-  {
-    id: "booking-2",
-    mentorName: "Samira Chen",
-    mentorRole: "Founder & Former CEO @ CloudSync",
-    founderName: "Rohan Varma",
-    startupName: "DormPay",
-    slot: "Monday, Oct 02 · 04:00 PM",
-    topic: "Customer Discovery & First 100 Users",
-    notes: "B2B sales strategy for collegiate dining vendors.",
-    createdAt: "2026-09-25",
-    status: "confirmed",
-    meetingLink: "/call/room-sc-office-hours?topic=Customer%20Discovery%20%26%20First%20100%20Users",
-  },
-];
+function getDefaultBookings(): Booking[] {
+  const dynamicSlots = generateUpcomingSlots();
+  return [
+    {
+      id: "booking-1",
+      mentorName: "Marcus Vance",
+      mentorRole: "Principal @ Horizon Ventures & Angel Syndicate",
+      founderName: "Rohan Varma",
+      startupName: "DormPay",
+      slot: dynamicSlots[0] || "Tomorrow · 10:00 AM",
+      topic: "Seed Cap Table Modeling & Venture Pitch Deck",
+      notes: "Review our 45 pilot campus merchant agreement and investor cap table split.",
+      createdAt: new Date().toISOString().split("T")[0],
+      status: "confirmed",
+      meetingLink: "/call/room-mv-office-hours?topic=Seed%20Cap%20Table%20Modeling%20%26%20Venture%20Pitch%20Deck",
+    },
+    {
+      id: "booking-2",
+      mentorName: "Samira Chen",
+      mentorRole: "Founder & Former CEO @ CloudSync",
+      founderName: "Rohan Varma",
+      startupName: "DormPay",
+      slot: dynamicSlots[1] || "Friday · 04:00 PM",
+      topic: "Customer Discovery & First 100 Users",
+      notes: "B2B sales strategy for collegiate dining vendors.",
+      createdAt: new Date().toISOString().split("T")[0],
+      status: "confirmed",
+      meetingLink: "/call/room-sc-office-hours?topic=Customer%20Discovery%20%26%20First%20100%20Users",
+    },
+  ];
+}
 
 const DEFAULT_OFFERS: MentorshipOffer[] = [
   {
@@ -354,12 +385,13 @@ export function getStoredBookings(): Booking[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(DEFAULT_BOOKINGS));
-      return DEFAULT_BOOKINGS;
+      const def = getDefaultBookings();
+      localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(def));
+      return def;
     }
     return JSON.parse(raw);
   } catch {
-    return DEFAULT_BOOKINGS;
+    return getDefaultBookings();
   }
 }
 
