@@ -17,8 +17,11 @@ import {
   Users,
   Video,
   Volume2,
+  Radio,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getLoggedInMentor } from "@/lib/appStore";
 
 interface InCallMessage {
   id: string;
@@ -30,27 +33,37 @@ interface InCallMessage {
 
 export default function VideoCallRoom() {
   const [, params] = useRoute("/call/:roomId");
-  const roomId = params?.roomId || "main-room";
+  const rawRoomId = params?.roomId || "main-room";
+  // Clean room id for WebRTC signaling (letters and numbers only)
+  const cleanRoom = rawRoomId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "consultationroom";
   const [, setLocation] = useLocation();
 
-  // URL search params for topic
   const urlParams = new URLSearchParams(window.location.search);
-  const roomTopic = urlParams.get("topic") || "Mentor & Founder Venture Review";
-  const partnerName = urlParams.get("with") || "Samira Chen (Alumni EIR)";
+  const roomTopic = urlParams.get("topic") || "1-on-1 Consultation Session";
+  const currentMentor = getLoggedInMentor();
+  const isHost = Boolean(currentMentor);
+  const partnerName = urlParams.get("with") || (isHost ? "Client" : "Consultant Specialist");
 
-  // Video and audio stream states
+  // Streams & Video Elements
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+
+  // Connection states
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isPeerConnected, setIsPeerConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState("Waiting for other device to join...");
+  const [callDuration, setCallDuration] = useState(0);
 
-  // In-call Live Chat
+  // Chat
   const [inCallChat, setInCallChat] = useState<InCallMessage[]>([
     {
       id: "call-msg-1",
-      sender: partnerName,
-      text: "Welcome to the pitch room! Can you hear and see me clearly?",
+      sender: "System",
+      text: "Connected to encrypted WebRTC room. When the other device joins with this link, video & audio connect directly peer-to-peer.",
       time: "Just now",
       isSelf: false,
     },
@@ -59,56 +72,134 @@ export default function VideoCallRoom() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Mock secondary participant video track / avatar simulation
-  const [isPartnerConnected, setIsPartnerConnected] = useState(true);
-  const [callDuration, setCallDuration] = useState(0);
+  // WebRTC Peer reference
+  const peerRef = useRef<any>(null);
+  const activeCallRef = useRef<any>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
 
-  // Initialize camera and microphone
   useEffect(() => {
-    let stream: MediaStream | null = null;
+    let currentStream: MediaStream | null = null;
+    let peer: any = null;
 
-    async function startMedia() {
+    async function initCall() {
+      // 1. Get Camera/Mic
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          stream = await navigator.mediaDevices.getUserMedia({
+          currentStream = await navigator.mediaDevices.getUserMedia({
             video: { width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: true,
           });
-          setLocalStream(stream);
+          localStreamRef.current = currentStream;
+          setLocalStream(currentStream);
           if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.srcObject = currentStream;
           }
-          toast.success("Camera and audio connected!");
-        } else {
-          setCameraError("Media devices API not supported in this browser.");
         }
       } catch (err: any) {
-        console.warn("getUserMedia failed or permission denied:", err);
-        setCameraError("Camera permission declined or not available. Running in simulated video mode.");
-        toast.info("Using simulated video stream (camera unavailable/denied).");
+        console.warn("Camera access denied or unavailable:", err);
+        setCameraError("Camera unavailable. You can still join and listen/speak.");
+      }
+
+      // 2. Initialize PeerJS WebRTC Connection
+      const PeerClass = (window as any).Peer;
+      if (!PeerClass) {
+        setConnectionStatus("WebRTC engine initializing...");
+        return;
+      }
+
+      // Host peer ID is derived from room ID
+      const hostPeerId = `crest-${cleanRoom}-host`;
+      const clientPeerId = `crest-${cleanRoom}-client-${Math.random().toString(36).substring(2, 6)}`;
+
+      // Attempt to become host or client
+      try {
+        peer = new PeerClass(hostPeerId, { debug: 1 });
+        peerRef.current = peer;
+
+        peer.on("open", () => {
+          setConnectionStatus("Room hosted. Share link for other device to join.");
+        });
+
+        // When someone calls this host
+        peer.on("call", (incomingCall: any) => {
+          setConnectionStatus("Connected with other device!");
+          setIsPeerConnected(true);
+          activeCallRef.current = incomingCall;
+
+          incomingCall.answer(localStreamRef.current || undefined);
+          incomingCall.on("stream", (incomingRemoteStream: MediaStream) => {
+            setRemoteStream(incomingRemoteStream);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = incomingRemoteStream;
+            }
+          });
+          incomingCall.on("close", () => {
+            setIsPeerConnected(false);
+            setRemoteStream(null);
+            setConnectionStatus("Other device disconnected.");
+          });
+        });
+
+        // If hostPeerId already exists, we are the client calling the host!
+        peer.on("error", (err: any) => {
+          if (err.type === "unavailable-id") {
+            // Room host is already online, join as client!
+            peer.destroy();
+            const clientPeer = new PeerClass(clientPeerId, { debug: 1 });
+            peerRef.current = clientPeer;
+
+            clientPeer.on("open", () => {
+              setConnectionStatus("Connecting to host device...");
+              const call = clientPeer.call(hostPeerId, localStreamRef.current || undefined);
+              activeCallRef.current = call;
+
+              if (call) {
+                call.on("stream", (hostRemoteStream: MediaStream) => {
+                  setConnectionStatus("Connected with other device!");
+                  setIsPeerConnected(true);
+                  setRemoteStream(hostRemoteStream);
+                  if (remoteVideoRef.current) {
+                    remoteVideoRef.current.srcObject = hostRemoteStream;
+                  }
+                });
+                call.on("close", () => {
+                  setIsPeerConnected(false);
+                  setRemoteStream(null);
+                  setConnectionStatus("Session closed.");
+                });
+              }
+            });
+          }
+        });
+      } catch (err) {
+        console.error("WebRTC initialization error:", err);
       }
     }
 
-    startMedia();
+    initCall();
 
-    // Call duration timer
-    const interval = setInterval(() => {
-      setCallDuration((prev) => prev + 1);
+    const timer = setInterval(() => {
+      setCallDuration((p) => p + 1);
     }, 1000);
 
     return () => {
-      clearInterval(interval);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      clearInterval(timer);
+      if (currentStream) {
+        currentStream.getTracks().forEach((t) => t.stop());
+      }
+      if (activeCallRef.current) {
+        activeCallRef.current.close();
+      }
+      if (peerRef.current) {
+        peerRef.current.destroy();
       }
     };
-  }, []);
+  }, [cleanRoom]);
 
-  // Sync track mute/unmute
   const toggleMic = () => {
     if (localStream) {
-      localStream.getAudioTracks().forEach((track) => {
-        track.enabled = isMicMuted;
+      localStream.getAudioTracks().forEach((t) => {
+        t.enabled = isMicMuted;
       });
     }
     setIsMicMuted(!isMicMuted);
@@ -117,8 +208,8 @@ export default function VideoCallRoom() {
 
   const toggleVideo = () => {
     if (localStream) {
-      localStream.getVideoTracks().forEach((track) => {
-        track.enabled = isVideoOff;
+      localStream.getVideoTracks().forEach((t) => {
+        t.enabled = isVideoOff;
       });
     }
     setIsVideoOff(!isVideoOff);
@@ -127,10 +218,17 @@ export default function VideoCallRoom() {
 
   const handleEndCall = () => {
     if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
+      localStream.getTracks().forEach((t) => t.stop());
     }
+    if (activeCallRef.current) activeCallRef.current.close();
+    if (peerRef.current) peerRef.current.destroy();
     toast.info("Session ended");
-    setLocation("/dashboard/learner");
+    setLocation("/mentors");
+  };
+
+  const copyRoomLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Room link copied! Open this on your other device/phone.");
   };
 
   const handleSendMessage = (e?: React.FormEvent) => {
@@ -139,7 +237,7 @@ export default function VideoCallRoom() {
 
     const msg: InCallMessage = {
       id: `call-msg-${Date.now()}`,
-      sender: "You (Rohan Varma)",
+      sender: "You",
       text: newMessage.trim(),
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isSelf: true,
@@ -148,70 +246,54 @@ export default function VideoCallRoom() {
     setInCallChat((prev) => [...prev, msg]);
     setNewMessage("");
 
-    // Auto partner response in video room based on what the user types
-    setTimeout(() => {
-      const lower = newMessage.toLowerCase();
-      let reply = "";
-
-      if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-        reply = "Hey there! I can hear you clearly. Let's dive right into your questions.";
-      } else if (lower.includes("screen") || lower.includes("share") || lower.includes("deck") || lower.includes("slide")) {
-        reply = "Feel free to present your screen or paste the key points right here in our notes!";
-      } else if (lower.includes("price") || lower.includes("cost") || lower.includes("money") || lower.includes("finance")) {
-        reply = "Those financial metrics look much clearer now. Let's analyze your unit economics next.";
-      } else if (lower.includes("code") || lower.includes("tech") || lower.includes("architecture")) {
-        reply = "Good architectural breakdown. Make sure the database schema scales with your expected request throughput.";
-      } else {
-        reply = `Noted on "${newMessage}". That's an important consideration. Let's break down the next milestone step.`;
-      }
-
-      setInCallChat((prev) => [
-        ...prev,
-        {
-          id: `call-msg-resp-${Date.now()}`,
-          sender: partnerName,
-          text: reply,
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isSelf: false,
-        },
-      ]);
-    }, 1400);
+    // Simulated response if other peer has not chatted yet
+    if (!isPeerConnected) {
+      setTimeout(() => {
+        setInCallChat((prev) => [
+          ...prev,
+          {
+            id: `call-msg-${Date.now()}`,
+            sender: partnerName,
+            text: "Share the room link above to have your second device join this video arena directly!",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isSelf: false,
+          },
+        ]);
+      }, 1500);
+    }
   };
 
-  const copyRoomLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Meeting link copied to clipboard!");
-  };
-
-  // Format seconds to MM:SS
   const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainder = secs % 60;
-    return `${mins.toString().padStart(2, "0")}:${remainder.toString().padStart(2, "0")}`;
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
   return (
     <div className="flex h-screen w-screen flex-col bg-[#0b0c0c] text-[#f9f6ef] overflow-hidden">
-      {/* Top Call Navigation Bar */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#262a28] bg-[#151717] px-6">
+      {/* Top Header */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#262a28] bg-[#151717] px-4 sm:px-6 z-20">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard/learner"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1f2421] text-[#cbd5c7] hover:bg-[#262d29] hover:text-white"
+            href="/mentors"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#0b0c0c] text-[#a6aba6] hover:text-white transition"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#74aa77] animate-pulse" />
-              <h1 className="font-display text-sm font-bold text-white sm:text-base">{roomTopic}</h1>
-              <span className="rounded bg-[#ef765e]/20 px-2 py-0.5 font-mono text-[10px] text-[#ef765e]">
-                LIVE ROOM
+              <span className="font-display text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+                {roomTopic}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold ${
+                isPeerConnected ? "bg-[#74aa77]/15 text-[#74aa77]" : "bg-[#ef765e]/15 text-[#ef765e]"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${isPeerConnected ? "bg-[#74aa77]" : "bg-[#ef765e] animate-pulse"}`} />
+                {isPeerConnected ? "Live Connected" : "Awaiting Partner"}
               </span>
             </div>
             <p className="text-[11px] text-[#8d9690]">
-              Room ID: <span className="font-mono text-white">{roomId}</span> · Session Duration:{" "}
-              <span className="font-mono text-[#74aa77]">{formatTime(callDuration)}</span>
+              {connectionStatus} · Duration: <span className="font-mono text-[#74aa77]">{formatTime(callDuration)}</span>
             </p>
           </div>
         </div>
@@ -219,9 +301,9 @@ export default function VideoCallRoom() {
         <div className="flex items-center gap-2">
           <button
             onClick={copyRoomLink}
-            className="hidden items-center gap-1.5 rounded-full border border-[#303333] bg-[#1c211f] px-3.5 py-1.5 text-xs text-[#cbd5c7] hover:bg-[#262d29] hover:text-white sm:flex"
+            className="flex items-center gap-1.5 rounded-full border border-[#ef765e]/40 bg-[#ef765e]/15 px-3.5 py-1.5 text-xs font-bold text-[#ef765e] hover:bg-[#ef765e]/25 transition"
           >
-            <Share2 className="h-3.5 w-3.5 text-[#ef765e]" /> Share Link
+            <Share2 className="h-3.5 w-3.5" /> Copy Room Link
           </button>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -235,36 +317,57 @@ export default function VideoCallRoom() {
 
       {/* Main Video Arena */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Videos Container */}
         <div className="relative flex flex-1 flex-col items-center justify-center p-4 sm:p-6 bg-[#0e1010]">
           <div className="grid h-full w-full max-w-6xl grid-cols-1 gap-4 lg:grid-cols-2">
-            {/* Participant 1: Remote Partner (Mentor) */}
+            
+            {/* Participant 1: Remote Partner (The Other Device) */}
             <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-[#262a28] bg-[#161a18] shadow-2xl">
               <div className="relative flex flex-1 items-center justify-center bg-gradient-to-b from-[#1b221e] to-[#121614] overflow-hidden">
-                {/* Simulated high quality remote video stream with real avatar */}
-                <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
-                  alt={partnerName}
-                  className="h-full w-full object-cover object-center filter brightness-95"
+                {/* Live Real Video Stream from the Other Device */}
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className={`h-full w-full object-cover object-center ${
+                    isPeerConnected && remoteStream ? "block" : "hidden"
+                  }`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+
+                {/* Waiting State if other device hasn't joined yet */}
+                {(!isPeerConnected || !remoteStream) && (
+                  <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
+                    <div className="relative">
+                      <div className="h-20 w-20 rounded-full border-2 border-dashed border-[#ef765e] animate-spin" />
+                      <div className="absolute inset-0 grid place-items-center">
+                        <Users className="h-8 w-8 text-[#ef765e]" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-display text-lg font-bold text-white">Waiting for other device...</h4>
+                      <p className="mt-1 text-xs text-[#8d9690] max-w-xs">
+                        Open this link on your second device or phone to connect instantly:
+                      </p>
+                      <button
+                        onClick={copyRoomLink}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#ef765e] px-4 py-2 text-xs font-bold text-white hover:bg-[#e9654c] shadow"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Click to Copy Room Link
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-[#74aa77]" />
-                  <span>{partnerName}</span>
-                </div>
-
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs text-[#a6aba6] backdrop-blur">
-                  <Volume2 className="h-3.5 w-3.5 text-[#74aa77]" />
-                  <span>Audio Active</span>
+                  <span className={`h-2 w-2 rounded-full ${isPeerConnected ? "bg-[#74aa77]" : "bg-[#ef765e]"}`} />
+                  <span>{partnerName} {isPeerConnected ? "(Live)" : "(Awaiting)"}</span>
                 </div>
               </div>
             </div>
 
-            {/* Participant 2: Local User (Founder) */}
+            {/* Participant 2: Local User (This Device) */}
             <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-[#262a28] bg-[#181d1a] shadow-2xl">
               <div className="relative flex flex-1 items-center justify-center bg-gradient-to-b from-[#202722] to-[#141815] overflow-hidden">
-                {/* Live Webcam Stream */}
+                {/* Local Webcam Video */}
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -275,22 +378,21 @@ export default function VideoCallRoom() {
                   }`}
                 />
 
-                {/* Fallback avatar if camera is off or permission was not granted */}
                 {(isVideoOff || cameraError) && (
                   <div className="flex flex-col items-center justify-center text-center p-6">
-                    <div className="grid h-24 w-24 place-items-center rounded-full bg-[#ef765e]/20 text-3xl font-bold font-display text-[#ef765e] border border-[#ef765e]/40 shadow-xl">
-                      RV
+                    <div className="grid h-20 w-20 place-items-center rounded-full bg-[#ef765e]/20 text-2xl font-bold font-display text-[#ef765e] border border-[#ef765e]/40 shadow-xl">
+                      YOU
                     </div>
-                    <p className="mt-4 font-display text-lg font-bold text-white">Rohan Varma (You)</p>
+                    <p className="mt-3 font-display text-base font-bold text-white">Your Camera</p>
                     <p className="text-xs text-[#8d9690]">
-                      {isVideoOff ? "Your camera is muted" : "Camera access simulated"}
+                      {isVideoOff ? "Camera is turned off" : "Camera access simulated or denied"}
                     </p>
                   </div>
                 )}
 
                 <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-[#ef765e]" />
-                  <span>You (Founder)</span>
+                  <span>This Device</span>
                 </div>
 
                 {isMicMuted && (
@@ -303,14 +405,12 @@ export default function VideoCallRoom() {
             </div>
           </div>
 
-          {/* Floating Call Control Dock */}
+          {/* Call Controls Dock */}
           <div className="absolute bottom-8 z-30 flex items-center gap-3 rounded-full border border-white/10 bg-[#151717]/90 px-6 py-3.5 shadow-2xl backdrop-blur-xl">
             <button
               onClick={toggleMic}
               className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                isMicMuted
-                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                  : "bg-white/10 text-white hover:bg-white/20"
+                isMicMuted ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-white/20"
               }`}
               title={isMicMuted ? "Unmute Mic" : "Mute Mic"}
             >
@@ -320,9 +420,7 @@ export default function VideoCallRoom() {
             <button
               onClick={toggleVideo}
               className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                isVideoOff
-                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                  : "bg-white/10 text-white hover:bg-white/20"
+                isVideoOff ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-white/20"
               }`}
               title={isVideoOff ? "Turn On Camera" : "Turn Off Camera"}
             >
@@ -332,7 +430,7 @@ export default function VideoCallRoom() {
             <button
               onClick={copyRoomLink}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-              title="Copy Room Link"
+              title="Copy Room Link for other device"
             >
               <Copy className="h-5 w-5" />
             </button>
@@ -341,12 +439,12 @@ export default function VideoCallRoom() {
               onClick={handleEndCall}
               className="flex h-12 px-6 items-center justify-center gap-2 rounded-full bg-red-600 font-bold text-white shadow-lg shadow-red-600/30 hover:bg-red-500 transition"
             >
-              <PhoneOff className="h-5 w-5" /> End Call
+              <PhoneOff className="h-5 w-5" /> Leave Room
             </button>
           </div>
         </div>
 
-        {/* In-Call Live Chat Sidebar */}
+        {/* Sidebar Chat */}
         {isSidebarOpen && (
           <aside className="flex w-80 sm:w-96 flex-col border-l border-[#262a28] bg-[#151717]">
             <div className="flex h-14 items-center justify-between border-b border-[#262a28] px-5">
@@ -363,10 +461,6 @@ export default function VideoCallRoom() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3" ref={chatScrollRef}>
-              <div className="rounded-xl border border-[#262a28] bg-[#0b0c0c] p-3 text-xs text-[#8d9690]">
-                Messages and links shared during this live session are visible to both participants.
-              </div>
-
               {inCallChat.map((m) => (
                 <div
                   key={m.id}
