@@ -783,12 +783,44 @@ export default function Admin() {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#a6aba6]">Profile Photo URL</label>
+                <label className="block font-semibold text-[#a6aba6] mb-1">
+                  Profile Photo (Upload from device or paste URL)
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-[#303333] bg-[#0b0c0c] p-2.5">
+                  <img
+                    src={newMentorImage}
+                    alt="Preview"
+                    className="h-12 w-12 rounded-full object-cover border-2 border-[#ef765e]"
+                  />
+                  <div className="flex-1 space-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 rounded-lg bg-[#ef765e] px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-[#e9654c] transition shadow">
+                      <Camera className="h-3.5 w-3.5" /> Choose Image from Device
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setNewMentorImage(reader.result as string);
+                            toast.success("Photo loaded from this device!");
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[10px] text-[#8d9690]">
+                      PNG, JPG, WEBP from your computer or phone.
+                    </p>
+                  </div>
+                </div>
                 <input
-                  value={newMentorImage}
+                  value={newMentorImage.startsWith("data:") ? "[Local Device Image Attached]" : newMentorImage}
                   onChange={(e) => setNewMentorImage(e.target.value)}
-                  placeholder="https://..."
-                  className="mt-1 h-10 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-sm text-white outline-none focus:border-[#ef765e]"
+                  placeholder="Or paste https:// image URL"
+                  className="mt-2 h-9 w-full rounded-xl border border-[#303333] bg-[#0b0c0c] px-3 text-xs text-white outline-none focus:border-[#ef765e]"
                 />
               </div>
 
