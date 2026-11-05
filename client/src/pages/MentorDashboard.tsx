@@ -11,6 +11,7 @@ import {
   saveMentors,
   setLoggedInMentor,
 } from "@/lib/appStore";
+import { deleteCloudMentor, saveCloudMentor } from "@/lib/cloudStore";
 import { toast } from "sonner";
 
 export default function MentorDashboard() {
@@ -90,6 +91,8 @@ export default function MentorDashboard() {
     saveMentors(nextList);
     setLoggedInMentor(updated);
     setMentor(updated);
+    // Cloud sync update
+    saveCloudMentor(updated).catch(console.warn);
     toast.success("Profile details updated successfully!");
   };
 
@@ -138,6 +141,7 @@ export default function MentorDashboard() {
     }
 
     deleteMentorAccount(mentor.id);
+    deleteCloudMentor(mentor.id).catch(console.warn);
     toast.success("Your mentor account and directory listing have been deleted.");
     setLocation("/mentors");
   };
