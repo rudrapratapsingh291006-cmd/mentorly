@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #0b0c0c;
+  --foreground: #f9f6ef;
+  --card: #151717;
+  --card-foreground: #f9f6ef;
+  --popover: #151717;
+  --popover-foreground: #f9f6ef;
+  --primary: #f9f6ef;
+  --primary-foreground: #0b0c0c;
+  --secondary: #1c211f;
+  --secondary-foreground: #d7ddd7;
+  --muted: #1f2222;
+  --muted-foreground: #a6aba6;
+  --accent: #ef765e;
+  --accent-foreground: #fffdf9;
+  --border: #303333;
+  --input: #303333;
+  --ring: #ef765e;
+  --radius: 1.1rem;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; background: var(--background); color: var(--foreground); font-family: 'DM Sans', sans-serif; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { transition: transform 160ms cubic-bezier(.23,1,.32,1), background-color 180ms ease, color 180ms ease, border-color 180ms ease; }
+button:active { transform: scale(.97); }
+::selection { background: #ffd0c5; color: #17211b; }
+
+.font-display { font-family: 'Fraunces', serif; }
+.font-mono { font-family: 'DM Mono', monospace; }
+.text-balance { text-wrap: balance; }
+.grid-paper { background-image: linear-gradient(#262a28 1px, transparent 1px), linear-gradient(90deg, #262a28 1px, transparent 1px); background-size: 28px 28px; }
+.paper-noise { position: relative; }
+.paper-noise::after { content: ''; pointer-events: none; position: absolute; inset: 0; opacity: .06; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E"); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise .7s cubic-bezier(.23,1,.32,1) both; }
+  .rise-delay-1 { animation-delay: 100ms; }
+  .rise-delay-2 { animation-delay: 180ms; }
+  .rise-delay-3 { animation-delay: 260ms; }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+}
