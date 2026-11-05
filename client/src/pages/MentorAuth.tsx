@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, Award, Briefcase, Camera, Check, Compass, Globe, LockKeyhole, Mail, Sparkles, User, Video, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Mentor, getStoredMentors, saveMentors } from "@/lib/appStore";
+import { Mentor, getStoredMentors, saveMentors, setLoggedInMentor } from "@/lib/appStore";
 import { toast } from "sonner";
 
 export default function MentorAuth() {
@@ -12,6 +12,8 @@ export default function MentorAuth() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [role, setRole] = useState("");
   const [affiliation, setAffiliation] = useState("");
   const [location, setLocationField] = useState("San Francisco · Remote");
@@ -27,10 +29,16 @@ export default function MentorAuth() {
       toast.error("Please fill in your name and email.");
       return;
     }
+    if (!password || password.length < 4) {
+      toast.error("Please enter a secure password (min 4 characters).");
+      return;
+    }
 
     const newMentor: Mentor = {
       id: `mentor-${Date.now()}`,
       name: name.trim(),
+      email: email.trim(),
+      password: password.trim(),
       role: role.trim() || "Experienced Industry Specialist",
       affiliation: affiliation.trim() || "Independent Mentor",
       location: location.trim(),
@@ -49,15 +57,36 @@ export default function MentorAuth() {
     const currentMentors = getStoredMentors();
     const updated = [newMentor, ...currentMentors];
     saveMentors(updated);
+    setLoggedInMentor(newMentor);
 
-    toast.success(`Welcome aboard, ${name}! Your mentor profile is now active on the public directory.`);
-    setLocation("/mentors");
+    toast.success(`Welcome, ${name}! Your mentor account and public listing are active.`);
+    setLocation("/mentor/dashboard");
   };
 
   const handleQuickLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Welcome back! Logged in as Mentor.");
-    setLocation("/dashboard/mentor");
+    const currentMentors = getStoredMentors();
+    const found = currentMentors.find(
+      (m) =>
+        m.email?.toLowerCase() === loginEmail.toLowerCase() ||
+        m.name.toLowerCase().includes(loginEmail.toLowerCase())
+    );
+
+    if (found) {
+      if (found.password && found.password !== loginPassword) {
+        toast.error("Incorrect password.");
+        return;
+      }
+      setLoggedInMentor(found);
+      toast.success(`Welcome back, ${found.name}!`);
+      setLocation("/mentor/dashboard");
+    } else {
+      // Default to first mentor if demo
+      const def = currentMentors[0];
+      setLoggedInMentor(def);
+      toast.success(`Signed in as ${def.name}!`);
+      setLocation("/mentor/dashboard");
+    }
   };
 
   return (
@@ -279,10 +308,13 @@ export default function MentorAuth() {
           ) : (
             <form onSubmit={handleQuickLogin} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-[#a6aba6]">Email</label>
+                <label className="block font-semibold text-[#a6aba6]">Email or Name</label>
                 <input
-                  type="email"
-                  defaultValue="mentor@example.com"
+                  type="text"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="e.g. mentor@example.com or Dr. Elena Rossi"
                   className="mt-1 h-11 w-full rounded-xl border border-[#303333] bg-[#151717] px-4 text-sm text-white outline-none focus:border-[#ef765e]"
                 />
               </div>
@@ -290,7 +322,10 @@ export default function MentorAuth() {
                 <label className="block font-semibold text-[#a6aba6]">Password</label>
                 <input
                   type="password"
-                  defaultValue="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
                   className="mt-1 h-11 w-full rounded-xl border border-[#303333] bg-[#151717] px-4 text-sm text-white outline-none focus:border-[#ef765e]"
                 />
               </div>
@@ -299,7 +334,7 @@ export default function MentorAuth() {
                 type="submit"
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ef765e] py-3 text-sm font-bold text-white shadow-lg shadow-[#ef765e]/30 transition hover:bg-[#e9654c]"
               >
-                Sign In to Mentor Workspace <ArrowRight className="h-4 w-4" />
+                Sign In to Mentor Dashboard <ArrowRight className="h-4 w-4" />
               </button>
             </form>
           )}

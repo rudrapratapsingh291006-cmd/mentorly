@@ -31,6 +31,8 @@ export function generateUpcomingSlots(baseDate = new Date()): string[] {
 export interface Mentor {
   id: string;
   name: string;
+  email?: string;
+  password?: string;
   role: string;
   affiliation: string;
   location: string;
@@ -321,7 +323,36 @@ const STORAGE_KEYS = {
   SAVED_MENTORS: "crestconnect_saved_mentors",
   UPVOTES: "crestconnect_upvotes",
   VOTED: "crestconnect_voted",
+  LOGGED_IN_MENTOR: "crestconnect_logged_in_mentor",
 };
+
+export function getLoggedInMentor(): Mentor | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LOGGED_IN_MENTOR);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setLoggedInMentor(mentor: Mentor | null): void {
+  try {
+    if (mentor) {
+      localStorage.setItem(STORAGE_KEYS.LOGGED_IN_MENTOR, JSON.stringify(mentor));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.LOGGED_IN_MENTOR);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export function deleteMentorAccount(mentorId: string): void {
+  const mentors = getStoredMentors();
+  const next = mentors.filter((m) => m.id !== mentorId);
+  saveMentors(next);
+  setLoggedInMentor(null);
+}
 
 export function getStoredMentors(): Mentor[] {
   try {

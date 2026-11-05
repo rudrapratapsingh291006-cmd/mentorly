@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import VideoCallRoom from "./pages/VideoCallRoom";
 import Messages from "./pages/Messages";
 import MentorAuth from "./pages/MentorAuth";
+import MentorDashboard from "./pages/MentorDashboard";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/startups" component={Startups} />
             <Route path="/mentor/join" component={MentorAuth} />
             <Route path="/mentor/login" component={MentorAuth} />
+            <Route path="/mentor/dashboard" component={MentorDashboard} />
             <Route path="/login/:role" component={Login} />
             <Route path="/dashboard/:role" component={Dashboard} />
             <Route path="/call/:roomId" component={VideoCallRoom} />
