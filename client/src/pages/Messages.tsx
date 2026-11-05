@@ -109,24 +109,35 @@ export default function Messages() {
     reloadMessages();
     toast.success("Message sent!");
 
-    // Simulate smart reply from mentor after 2.5s
+    // Contextual, intelligent reply from mentor based on what the user said
     setTimeout(() => {
-      const answers = [
-        `Thanks for sharing that update, Rohan! Let's examine your customer acquisition metrics on our next live call.`,
-        `Checked this out. Looks very solid—are you ready to present this during office hours?`,
-        `Great point. I've sent you an invite room link above so we can review this together live.`,
-      ];
-      const answer = answers[Math.floor(Math.random() * answers.length)];
+      const lower = inputText.toLowerCase();
+      let reply = "";
+
+      if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+        reply = `Hello! Glad to connect with you. What specific problem or field are you working on right now that you need guidance with?`;
+      } else if (lower.includes("career") || lower.includes("job") || lower.includes("interview") || lower.includes("resume")) {
+        reply = `Great question on career progression. In my experience, focusing on your tangible project impact and storytelling in interviews makes all the difference. I'd love to review your resume or do a mock interview over a quick video call.`;
+      } else if (lower.includes("price") || lower.includes("pricing") || lower.includes("money") || lower.includes("finance") || lower.includes("cost")) {
+        reply = `Financial modeling and pricing can be tricky when starting out. You want to anchor to the value you deliver rather than just cost-plus. Let's schedule a 20-minute video slot to walk through your numbers together.`;
+      } else if (lower.includes("tech") || lower.includes("code") || lower.includes("bug") || lower.includes("architecture") || lower.includes("stack")) {
+        reply = `Tech architecture decisions pay off long-term. Start with the simplest stack that allows you to iterate quickly before over-engineering. Feel free to send over your code repo or diagram so I can take a look!`;
+      } else if (lower.includes("call") || lower.includes("meet") || lower.includes("video") || lower.includes("time")) {
+        reply = `I'd be glad to hop on a video session with you! You can tap the camera button right below our chat or join my open room anytime.`;
+      } else {
+        reply = `Thanks for sharing: "${inputText.length > 50 ? inputText.substring(0, 48) + '...' : inputText}". That is a common hurdle people face at this stage. I've noted this down and we can tackle actionable steps together. Would you like to hop on a live video call?`;
+      }
+
       sendChatMessage({
         senderId: activeContact.id,
         senderName: activeContact.name,
         senderRole: "mentor",
         recipientId: "founder-rohan",
         recipientName: "Rohan Varma",
-        text: answer,
+        text: reply,
       });
       reloadMessages();
-    }, 2200);
+    }, 1200);
   };
 
   const handleCreateInstantCall = () => {

@@ -148,25 +148,34 @@ export default function VideoCallRoom() {
     setInCallChat((prev) => [...prev, msg]);
     setNewMessage("");
 
-    // Auto partner response simulation after 2 seconds
+    // Auto partner response in video room based on what the user types
     setTimeout(() => {
-      const replies = [
-        "That makes total sense, let's review your slide 4 next.",
-        "Your financial unit economics look much cleaner here.",
-        "Got it! Let me make a note of this LOI template for you.",
-      ];
-      const randomReply = replies[Math.floor(Math.random() * replies.length)];
+      const lower = newMessage.toLowerCase();
+      let reply = "";
+
+      if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+        reply = "Hey there! I can hear you clearly. Let's dive right into your questions.";
+      } else if (lower.includes("screen") || lower.includes("share") || lower.includes("deck") || lower.includes("slide")) {
+        reply = "Feel free to present your screen or paste the key points right here in our notes!";
+      } else if (lower.includes("price") || lower.includes("cost") || lower.includes("money") || lower.includes("finance")) {
+        reply = "Those financial metrics look much clearer now. Let's analyze your unit economics next.";
+      } else if (lower.includes("code") || lower.includes("tech") || lower.includes("architecture")) {
+        reply = "Good architectural breakdown. Make sure the database schema scales with your expected request throughput.";
+      } else {
+        reply = `Noted on "${newMessage}". That's an important consideration. Let's break down the next milestone step.`;
+      }
+
       setInCallChat((prev) => [
         ...prev,
         {
           id: `call-msg-resp-${Date.now()}`,
           sender: partnerName,
-          text: randomReply,
+          text: reply,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           isSelf: false,
         },
       ]);
-    }, 1800);
+    }, 1400);
   };
 
   const copyRoomLink = () => {
